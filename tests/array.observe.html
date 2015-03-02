@@ -7,13 +7,14 @@ body {
 }
 
 span {
-	border: 1px solid #19f;
+	border: 0px solid #19f;
 	margin: 2px;
 	padding: 2px;
+	color: dodgerblue;
 }
-.changed {
-	color: #f00;
-}
+.higher { color: #f00; }
+.lower { color: #0f0; }
+
 </style>
 </head>
 <body>
@@ -29,19 +30,21 @@ New
 <script>
 
 // generate data...
-var data = [0, 0, 0, 0, 0, 0, 0, 0];
-var dataOld = [0, 0, 0, 0, 0, 0, 0, 0];
+var loopSize = 88;
+var lines = 1;
+var data = [];
+var dataOld = [];
 
 function changeData() {
 	dataOld = data.slice();
 	
-	for(var i = 0; i < 8; i++) {
+	for(var i = 0; i < loopSize * lines; i++) {
 		data[i] = Math.floor(Math.random() * 10);
 	}
 	
-	console.log("changeData");
-	console.log(data);
-	console.log(dataOld);
+	//console.log("changeData");
+	//console.log(data);
+	//console.log(dataOld);
 }
 
 // re-get and refresh current data display...
@@ -55,9 +58,16 @@ function refreshData() {
 // draw in div...
 function display(div, d) {
 	var a = [];
+	var loop = 0;
 	
-	for(var i = 0; i < 8; i++) {
+	for(var i = 0; i < loopSize * lines; i++) {
 		a.push("<span id=\"" + div + i + "\">" + d[i] + "</span>");
+		
+		loop++;
+		if(loop == loopSize) {
+			loop = 0;
+			a.push("<br />");
+		}
 	}
 	
 	document.getElementById(div).innerHTML = a.join("");
@@ -66,12 +76,15 @@ function display(div, d) {
 document.getElementById("btn").addEventListener("click", refreshData, false);
 
 changeData();
+changeData();
 
 Array.observe(data, function(changes) {
-	console.log("observer", changes);
+	//console.log("observer", changes);
 	
 	for(var o in changes) {
-		document.getElementById("data" + changes[o].name).className = "changed";
+		var p = changes[o];
+		var c = p.oldValue > p.object[p.name]?"higher":"lower";
+		document.getElementById("data" + p.name).className = c;
 	}
 });
 
