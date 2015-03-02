@@ -1,0 +1,83 @@
+<html>
+<head>
+<style>
+body {
+	background-color: #000;
+	color: #ccc;
+}
+
+span {
+	border: 1px solid #19f;
+	margin: 2px;
+	padding: 2px;
+}
+.changed {
+	color: #f00;
+}
+</style>
+</head>
+<body>
+Old
+<div id="dataOld"></div>
+<br />
+New
+<div id="data"></div>
+<br />
+<br />
+<button id="btn">Change values</button>
+
+<script>
+
+// generate data...
+var data = [0, 0, 0, 0, 0, 0, 0, 0];
+var dataOld = [0, 0, 0, 0, 0, 0, 0, 0];
+
+function changeData() {
+	dataOld = data.slice();
+	
+	for(var i = 0; i < 8; i++) {
+		data[i] = Math.floor(Math.random() * 10);
+	}
+	
+	console.log("changeData");
+	console.log(data);
+	console.log(dataOld);
+}
+
+// re-get and refresh current data display...
+function refreshData() {
+	changeData();
+	
+	display("dataOld", dataOld);
+	display("data", data);
+}
+
+// draw in div...
+function display(div, d) {
+	var a = [];
+	
+	for(var i = 0; i < 8; i++) {
+		a.push("<span id=\"" + div + i + "\">" + d[i] + "</span>");
+	}
+	
+	document.getElementById(div).innerHTML = a.join("");
+}
+
+document.getElementById("btn").addEventListener("click", refreshData, false);
+
+changeData();
+
+Array.observe(data, function(changes) {
+	console.log("observer", changes);
+	
+	for(var o in changes) {
+		document.getElementById("data" + changes[o].name).className = "changed";
+	}
+});
+
+display("dataOld", dataOld);
+display("data", data);
+
+</script>
+</body>
+</html>
