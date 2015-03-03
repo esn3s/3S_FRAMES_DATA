@@ -1,0 +1,52 @@
+.MultipleSelectBox {
+	/* border: 1px solid #aaa;
+	height: 200px;
+	list-style-type: none;
+	margin: 0;
+	overflow: auto;
+	padding: 1px 0;
+	width: 500px;
+	background-color: white;
+	color: black;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-moz-box-shadow: 0 0 5px #888;
+	-webkit-box-shadow: 0 0 5px #888;
+	box-shadow: 0 0 5px #888; */
+}
+
+.MultipleSelectBox.selecting {
+	
+}
+
+.MultipleSelectBox span {
+	
+}
+
+.MultipleSelectBox span.disabled {
+	
+}
+
+.MultipleSelectBox span.optgroup {
+	
+}
+
+.MultipleSelectBox span.selected {
+	
+}
+
+.MultipleSelectBox span.selecting {
+	
+}
+
+.MultipleSelectBox.vertical span.optgroupitem {
+	
+}
+
+/* Ultimate CSS Gradient Generator (Orange 3D) */
+.MultipleSelectBox span.selected {
+	background: linear-gradient(to bottom, #ffa84c 0%,#ff7b0d 100%);
+	color: #000;
+}
