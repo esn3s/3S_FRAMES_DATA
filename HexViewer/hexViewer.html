@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hex viewer v0.0.1</title>
+
+<link media="all" type="text/css" rel="stylesheet" href="assets/css/hexViewer.css">
+<link media="all" type="text/css" rel="stylesheet" href="assets/css/multipleselectbox.css">
+
+<script src="http://laraveltest/assets/js/jquery-2.1.3.min.js"></script>
+<script src="http://laraveltest/assets/js/velocity.1.2.2.min.js"></script>
+<script src="http://laraveltest/assets/js/jquery.multipleselectbox.js"></script>
+<script src="http://laraveltest/assets/js/hexViewer.js"></script>
+
+</head>
+<body>
+
+<header></header>
+
+<div id="hv_main">
+	<section class="menubar">menu</section>
+	<section>
+		<section id="sidebar_left" class="sidebar sidebar_left">
+			<section class="sidebar_section">
+				<h2>Selected range</h2>
+				<div class="sidebar_data">
+					<span class="sidebar_span_title">From</span>: <input id="selectedRange_start" value="" readonly /><br />
+					<span class="sidebar_span_title">To</span>: <input id="selectedRange_end" value="" readonly /><br />
+					<span class="sidebar_span_title">Data</span>: <input id="selectedRange_data" value="" readonly />
+				</div>
+			</section>
+			<section class="sidebar_section">
+				<h2>Data Inspector</h2>
+				<div class="sidebar_data_insp">
+					<span class="sidebar_span_title">Type</span><span class="sidebar_span_title">Unsigned</span><span class="sidebar_span_title">Signed</span>
+					<br />
+					<span class="sidebar_span_line">Byte</span><input id="value_byte_unsigned" value="" readonly /><input id="value_byte_signed" value="" readonly />
+					<br />
+				</div>
+			</section>
+		</section>
+		<section id="sidebar_right" class="sidebar sidebar_right">sidebar right</section>
+	</section>
+	
+	<section id="editor" class="editor">
+		<div id="address" class="address">0x00000000</div>
+		<div id="hex">
+			<div id="hex_header" class="hex_header">
+				<span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span>&nbsp;<span>08</span><span>09</span><span>0A</span><span>0B</span><span>0C</span><span>0D</span><span>0E</span><span>0F</span>
+			</div>
+			<div id="hex_data" class="hex_data"></div>
+		</div>
+		<div id="hex_text" class="hex_text">....</div>
+		<div id="hex_info" class="hex_info">----</div>
+	</section>
+</div>
+
+<footer></footer>
+
+<script>
+// DOM ready...
+$(function() {
+	if(EHV) {
+		// create object...
+		var ehv = new EHV();
+		//ehv.getData(0x06444C70);
+		ehv.getData(0);
+		
+		// make hex data clickable...
+		//$("span").on("#hex_data", "click", function() { this.toggleClass("selectedData"); });
+		
+		// selectable data...
+		$("#hex_data").multipleSelectBox({
+			onSelectStart: function() {
+				//$(this).children().stop().velocity({ opacity: 1 });
+			},
+			onSelectEnd: function() {
+				//$(this).children(":not(.selected)").velocity({ opacity: 0.5 }, 100);
+				ehv.updateWithSelectedRange($(this).serializeMultipleSelectBox());
+			}
+		});
+	}
+});
+
+</script>
+</body>
+</html>
