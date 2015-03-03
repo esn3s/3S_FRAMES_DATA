@@ -27,9 +27,30 @@ Ideas:
 ©ESN@2015
 */
 
+// add 0 before, if needed...
 function pad (str, max) {
 	str = str.toString();
 	return str.length < max ? pad("0" + str, max) : str;
+}
+
+// convert an hex data (string) to signed decimal...
+// inverse operation: num = -4; (num < 0 ? (0xFFFFFFFF + num + 1) : num).toString(16);
+function hexByte2signed(h) {
+	var a = parseInt(h, 16);
+	var sd = ((a & 0x8000) > 0)?a - 0x10000:a;
+	
+	//console.log("hexByte2signed", h, sd);
+	
+	return sd;
+}
+
+function hexWord2signed(h) {
+	var a = parseInt(h, 16);
+	var sd = ((a & 0x80000) > 0)?a - 0x100000000:a;
+	
+	//console.log("hexWord2signed", h, sd);
+	
+	return sd;
 }
 
 function EHV(options) {
@@ -75,16 +96,25 @@ EHV.prototype = {
 		$("#selectedRange_end").val(offsetEnd);
 		$("#selectedRange_data").val(data.join(""));
 		
+		// empty inspector fields...
+		$("input", "#sidebar_data_insp").val("");
+		
 		// update values fields...
-		if(data.length == 2) {
-			$("#value_byte_unsigned").val("hex2udec(" + data + ")");
-			$("#value_byte_signed").val("hex2dec(" + data + ")");
+		var dataFinal = data.join("");
+		
+		if(data.length == 1) {
+			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
+		}
+		else if(data.length == 2) {
+			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
+			$("#value_byte_signed").val(hexByte2signed(dataFinal));
 		}
 		else if(data.length == 4) {
-			
+			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
+			$("#value_word_signed").val(hexWord2signed(dataFinal));
 		}
 		else if(data.length == 8) {
-			
+			$("#value_dword").val("0x" + dataFinal);
 		}
 	},
 	initDivAddress: function() {
@@ -134,6 +164,7 @@ EHV.prototype = {
 	getData: function(addr) {
 		this.addr = addr;// || 0x02000000;
 		this.data = "FFC0000E003A000C0000000000000000FFA20016004C0012FFCE001A00320014FFB6001A003E0014000000000000000000000000000000000000000000000000FFA80018004800120000000000000000FFC0002800260020FFCE0018001200120000000000000000000000000000000FFD00020002E0020FFDC00140052003400000000000000000000000000000000FFE00012007600140000000000000000FFD40018003800140000000000000000FFE000100076000E0000000000000000FFDA00100036000E0000000000000000FFBE002E00240024FFD000200010001800000000000000000000000000000000FFC0002C00340024000000000000000000000000000000000000000000000000FFC2002A003C0022000000000000000000000000000000000000000000000000FFC4002800600020000000000000000000000000000000000000000000000000FFB40016002E00120000000000000000FFCC0016003600120000000000000000FFBA00120034000E0000000000000000";
+		this.data = "FFFFFFFEFFFDFF01FF0000FF00FE";
 		
 		this.loadData();
 		
