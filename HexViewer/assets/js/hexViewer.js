@@ -106,14 +106,13 @@ EHV.prototype = {
 			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
 		}
 		else if(data.length == 2) {
-			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
+			//$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
 			$("#value_byte_signed").val(hexByte2signed(dataFinal));
+			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
 		}
 		else if(data.length == 4) {
 			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
 			$("#value_word_signed").val(hexWord2signed(dataFinal));
-		}
-		else if(data.length == 8) {
 			$("#value_dword").val("0x" + dataFinal);
 		}
 	},
