@@ -131,14 +131,7 @@ section {
 	width: 100px;
 }
 
-.sidebar_data_insp input {
-	background-color: #555;
-	border: 1px solid #000;
-	color: #fff;
-	margin-left: 5px;
-	text-align: center;
-	width: 100px;
-}
+
 .sidebar_span_title {
 	display: inline-block;
 	width: 80px;
@@ -155,8 +148,8 @@ section {
 	border: 0px solid dodgerblue;
 	width: 75px;
 }
-.sidebar_data_insp input {
-	background-color: #555;
+.input_insp {
+	background-color: #111;
 	border: 0px solid #000;
 	color: #fff;
 	margin-left: 5px;
@@ -185,6 +178,12 @@ section {
 	outline: 1px solid #fb0;
 	color: #fb0;
 }
+
+.span_b 	{ color: #0bf; }
+.span_bs 	{ color: #b0f; }
+.span_w 	{ color: #0fb; }
+.span_ws 	{ color: #bf0; }
+.span_dw 	{ color: #fb0; }
 
 
 
