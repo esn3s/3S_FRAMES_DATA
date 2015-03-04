@@ -119,12 +119,10 @@ EHXV.prototype = {
 	init: function() {
 		this.initStructure();
 		this.initHeader();
-		this.initAddress();
 	},
 	
 	// build header...
 	initHeader: function() {
-		var s = "";
 		var j = this.nbCols;
 		
 		for(var i = 0, k = 0; i < j; i++, k++) {
@@ -143,24 +141,53 @@ EHXV.prototype = {
 	// build address div...
 	initAddress: function() {
 		// build nbRows div...
-		var s = "";
 		var j = this.nbRows;
 		var addr = this.addr;
-		var div = "addr" + this.suffix + "_";
+		//var div = "addr" + this.suffix + "_";
 		
+		// delete previous content...
+		var el = this._cdiv.address;
+		while(el.firstChild) el.removeChild(el.firstChild);
+		
+		// build new div content...
 		for(var i = 0; i < j; i++) {
 			var e = document.createElement("div");
 			e.appendChild(document.createTextNode("0x" + pad((addr + i * 16).toString(16).toUpperCase(), 8)));
-			this._cdiv.address.appendChild(e);
+			el.appendChild(e);
+		}
+	},
+	// build hex data div...
+	initHexData: function() {
+		// build nbRows div...
+		var j = this.nbRows;
+		var c = this.nbCols;
+		var addr = this.addr;
+		var id = "data" + this.suffix + "_";
+		
+		// delete previous content...
+		var el = this._cdiv.data;
+		while(el.firstChild) el.removeChild(el.firstChild);
+		
+		// build new div content...
+		for(var i = 0; i < j; i++) {
+			for(var k = 0; k < c; k++) {
+				var e = document.createElement("span");
+				e.id = id + j * 16 + k;
+				e.appendChild(document.createTextNode(".."));
+				el.appendChild(e);
+				
+				// each 8, insert a space...
+				if(k === 7) el.appendChild(document.createTextNode(" "));
+			}
+			
+			el.appendChild(document.createElement("br"));
 		}
 	},
 	
-	// build structure if needed...
+	// build structure...
 	initStructure: function() {
 		// container div...
 		this._cdiv.base = document.getElementById(this.div.base);
-		
-		// may be optimized by using createDocumentFragment, populating its DOM and append it to base...
 		
 		var addr = newElement("div", this.div.address, "address");
 		var hex = newElement("div", this.div.hex, "");
@@ -198,9 +225,22 @@ EHXV.prototype = {
 	
 	// replace content of hex data...
 	displayDataForIndex: function(index) {
-		var data = this.data[index] || "out of bound index '" + index + "'";
+		var data = (this.data[index] || "out of bound index '" + index + "'").match(/.{1,2}/g); // better way possible?
 		
-		// cut every line of data...
+		// update each span with proper value...
+		// build nbRows div...
+		var j = this.nbRows;
+		var c = this.nbCols;
+		var addr = this.addr;
+		var id = "data" + this.suffix + "_";
+		
+		var el = this._cdiv.data.childNodes;
+		var i = el.length;
+		
+		// build new div content...
+		for(var k = 0; k < i; k++) {
+			if(el[k].id) el[k].textContent = data[k];
+		}
 		
 		console.log("displayDataForIndex", data);
 	},
@@ -208,6 +248,12 @@ EHXV.prototype = {
 	// update data array to display...
 	setData: function(addr, data) {
 		this.addr = addr || 0;
+		
+		// refresh address div...
+		this.initAddress();
+		
+		// prepare hex data...
+		this.initHexData();
 		
 		if(data.constructor === Array) {
 			this.data = data;
@@ -225,6 +271,24 @@ EHXV.prototype = {
 	// update values in data inspector part...
 	updateDataInspector: function(data) {
 		
+	},
+	
+	// old code...
+	initDivHexData: function() {
+		var s = [];
+		var size = this.nbRows;
+		var a = this.addr;
+		
+		for(var r = 0; r < size; r++) {
+			for(var i = 0, o = r * 16; i < 8; i++, o+=2, a++) s.push("<span id=\"data_" + a + "\">" + this.data[o] + this.data[o + 1] + "</span>");
+			s.push("&nbsp;");
+			for(var i = 8; i < 16; i++, o+=2, a++) s.push("<span id=\"data_" + a + "\">" + this.data[o] + this.data[o + 1] + "</span>");
+			s.push("<br />\n");
+		}
+		
+		$("#hex_data").html(s.join(""));
+		
+		console.log("initDivHexData");
 	},
 	
 	updateWithSelectedRange: function(data) {
@@ -279,22 +343,6 @@ EHXV.prototype = {
 		}
 	},
 	
-	initDivHexData: function() {
-		var s = [];
-		var size = this.nbRows;
-		var a = this.addr;
-		
-		for(var r = 0; r < size; r++) {
-			for(var i = 0, o = r * 16; i < 8; i++, o+=2, a++) s.push("<span id=\"data_" + a + "\">" + this.data[o] + this.data[o + 1] + "</span>");
-			s.push("&nbsp;");
-			for(var i = 8; i < 16; i++, o+=2, a++) s.push("<span id=\"data_" + a + "\">" + this.data[o] + this.data[o + 1] + "</span>");
-			s.push("<br />\n");
-		}
-		
-		$("#hex_data").html(s.join(""));
-		
-		console.log("initDivHexData");
-	},
 	initDivHexText: function() {
 		
 	},
