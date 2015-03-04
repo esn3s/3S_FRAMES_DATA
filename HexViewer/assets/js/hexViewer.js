@@ -53,18 +53,180 @@ function hexWord2signed(h) {
 	return sd;
 }
 
-function EHV(options) {
-	this.nbRows = 16;
-	this.knownRanges = []; // list of known ranges with their info...
+// return a new element with given id and class attribute set...
+function newElement(type, id, cl) {
+	var e = document.createElement(type);
+	e.setAttribute("id", id);
+	e.setAttribute("class", cl);
+	
+	return e;
+}
+
+/*
+HexViewer 'class'...
+options may content:
+- nbRows
+- div
+- addr
+- data
+*/
+function EHXV(options) {
 	options = options || {};
-	this.addr = options.addr || 0; // start address, decimal...
-	this.addrHex = this.addr.toString(16); // start address, decimal...
-	this.data = options.data || ""; // data, string...
-	this.size = this.data.length || 1024; // length...
-	this.addrEnd = this.addr + this.size;
+	
+	this.nbCols = options.cols || 16;			// nb cols to display...
+	this.nbRows = options.rows || 32;			// nb rows to display...
+	this.addr = options.addr || 0x02001230; 				// start address, decimal...
+	this.data = options.data || [];			// full set of data for all frames, string...
+	this.index = 0;								// index of data to read...
+	
+	this.knownRanges = [];						// list of known ranges with their info...
+	
+	// determine occurence of object to build prefix...
+	this.occurenceCounter++;
+	this.suffix = this.occurenceCounter;
+	
+	this.div = {
+		base: options.div || "hxv",
+		address: 	"address" + this.suffix,
+		hex: 		"hex" + this.suffix,
+		header: 	"hex_header" + this.suffix,
+		data: 		"hex_data" + this.suffix,
+		text: 		"hex_text" + this.suffix,
+		info: 		"hex_info" + this.suffix,
+	};
+	
+	// cached div...
+	this._cdiv = {
+		base: null,
+		address: null,
+		hex: null,
+		header: null,
+		data: null,
+		text: null,
+		info: null,
+	};
+	
+	// initialisation...
+	this.init();
 };
 
-EHV.prototype = {
+// class methods...
+EHXV.prototype = {
+	// occurence counter to know wich objects structure to use...
+	occurenceCounter: 0,
+	
+	// init structure and prepare address div...
+	init: function() {
+		this.initStructure();
+		this.initHeader();
+		this.initAddress();
+	},
+	
+	// build header...
+	initHeader: function() {
+		var s = "";
+		var j = this.nbCols;
+		
+		for(var i = 0, k = 0; i < j; i++, k++) {
+			// each 8, insert a space...
+			if(k === 8) {
+				this._cdiv.header.appendChild(document.createTextNode(" "));
+				k = 0;
+			}
+			
+			var span = document.createElement("span");
+			span.appendChild(document.createTextNode(pad(i, 2)));
+			this._cdiv.header.appendChild(span);
+		}
+	},
+	
+	// build address div...
+	initAddress: function() {
+		// build nbRows div...
+		var s = "";
+		var j = this.nbRows;
+		var addr = this.addr;
+		var div = "addr" + this.suffix + "_";
+		
+		for(var i = 0; i < j; i++) {
+			var e = document.createElement("div");
+			e.appendChild(document.createTextNode("0x" + pad((addr + i * 16).toString(16).toUpperCase(), 8)));
+			this._cdiv.address.appendChild(e);
+		}
+	},
+	
+	// build structure if needed...
+	initStructure: function() {
+		// container div...
+		this._cdiv.base = document.getElementById(this.div.base);
+		
+		// may be optimized by using createDocumentFragment, populating its DOM and append it to base...
+		
+		var addr = newElement("div", this.div.address, "address");
+		var hex = newElement("div", this.div.hex, "");
+		var hex_header = newElement("div", this.div.header, "hex_header");
+		var hex_data = newElement("div", this.div.data, "hex_data");
+		hex.appendChild(hex_header);
+		hex.appendChild(hex_data);
+		var text = newElement("div", this.div.text, "hex_text");
+		var info = newElement("div", this.div.info, "hex_info");
+		
+		this._cdiv.base.appendChild(addr);
+		this._cdiv.base.appendChild(hex);
+		this._cdiv.base.appendChild(text);
+		this._cdiv.base.appendChild(info);
+		
+		// cache all...
+		this._cdiv.address = addr;
+		this._cdiv.hex = hex;
+		this._cdiv.header = hex_header;
+		this._cdiv.data = hex_data;
+		this._cdiv.text = text;
+		this._cdiv.info = info;
+	},
+	
+	// display data for given index...
+	displayData: function(index) {
+		index = index || 0; // display index 0 by default...
+		
+		// refresh data display...
+		this.displayDataForIndex(index);
+		
+		// check for known ranges...
+		this.drawKnownRanges();
+	},
+	
+	// replace content of hex data...
+	displayDataForIndex: function(index) {
+		var data = this.data[index] || "out of bound index '" + index + "'";
+		
+		// cut every line of data...
+		
+		console.log("displayDataForIndex", data);
+	},
+	
+	// update data array to display...
+	setData: function(addr, data) {
+		this.addr = addr || 0;
+		
+		if(data.constructor === Array) {
+			this.data = data;
+		}
+		else {
+			this.data = [data];
+		}
+	},
+	
+	// check known ranges and display them on screen...
+	drawKnownRanges: function() {
+	
+	},
+	
+	// update values in data inspector part...
+	updateDataInspector: function(data) {
+		
+	},
+	
 	updateWithSelectedRange: function(data) {
 		// find all selected...
 		var offsetStart, offsetEnd, data;
@@ -116,19 +278,7 @@ EHV.prototype = {
 			$("#value_dword").val("0x" + dataFinal);
 		}
 	},
-	initDivAddress: function() {
-		var s = [];
-		s.push("<br />\n");
-		var size = this.nbRows * 16;
-		
-		for(var i = 0; i < size; i+=16) {
-			s.push("<div id=\"addr_" + i + "\">0x" + pad((this.addr + i).toString(16).toUpperCase(), 8) + "</div>");
-		}
-		
-		$(".address").html(s.join("\n\t"));
-		
-		console.log("initDivAddress");
-	},
+	
 	initDivHexData: function() {
 		var s = [];
 		var size = this.nbRows;
