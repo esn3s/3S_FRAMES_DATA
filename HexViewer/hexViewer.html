@@ -47,17 +47,7 @@
 		<section id="sidebar_right" class="sidebar sidebar_right">sidebar right</section>
 	</section>
 	
-	<section id="editor" class="editor">
-		<div id="address" class="address">0x00000000</div>
-		<div id="hex">
-			<div id="hex_header" class="hex_header">
-				<span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span>&nbsp;<span>08</span><span>09</span><span>0A</span><span>0B</span><span>0C</span><span>0D</span><span>0E</span><span>0F</span>
-			</div>
-			<div id="hex_data" class="hex_data"></div>
-		</div>
-		<div id="hex_text" class="hex_text">....</div>
-		<div id="hex_info" class="hex_info">----</div>
-	</section>
+	<section id="editor" class="editor"></section>
 </div>
 
 <footer></footer>
@@ -65,11 +55,13 @@
 <script>
 // DOM ready...
 $(function() {
-	if(EHV) {
+	if(EHXV) {
 		// create object...
-		var ehv = new EHV();
+		var ehxv = new EHXV({div: "editor"});
+		ehxv.setData(0x06444C70, ["FFC0000E003A000C0000000000000000FFA20016004C0012FFCE001A00320014FFB6001A003E0014000000000000000000000000000000000000000000000000FFA80018004800120000000000000000FFC0002800260020FFCE0018001200120000000000000000000000000000000FFD00020002E0020FFDC00140052003400000000000000000000000000000000FFE00012007600140000000000000000FFD40018003800140000000000000000FFE000100076000E0000000000000000FFDA00100036000E0000000000000000FFBE002E00240024FFD000200010001800000000000000000000000000000000FFC0002C00340024000000000000000000000000000000000000000000000000FFC2002A003C0022000000000000000000000000000000000000000000000000FFC4002800600020000000000000000000000000000000000000000000000000FFB40016002E00120000000000000000FFCC0016003600120000000000000000FFBA00120034000E0000000000000000"]);
+		ehxv.displayData();
 		//ehv.getData(0x06444C70);
-		ehv.getData(0);
+		//ehxv.getData(0);
 		
 		// make hex data clickable...
 		//$("span").on("#hex_data", "click", function() { this.toggleClass("selectedData"); });
