@@ -80,20 +80,6 @@ $(function() {
 	var tStart = new Date().getTime();
 	ehxv.setData(0x06444C70, tmpData);
 	
-	var w = new WATCHER({
-		name: "",
-		addr: "0x06444D90",
-		size: 4,
-		type: "dw"
-	});
-	
-	var w = new WATCHER({
-		name: "",
-		addr: "0x06444D90",
-		size: 4,
-		type: "ws"
-	});
-	
 	// attach event handler for multiselectbox and inspector fields...
 	// TODO: move in object instead of declaring it here...
 	$("#" + ehxv._cdiv.data.id).multipleSelectBox({
@@ -110,14 +96,13 @@ $(function() {
 		var size = $("#selectedRange_data").val().length / 2;
 		var targetDivs = $("span.selected", ehxv._cdiv.hex);
 		
-		var w = new WATCHER({
+		var w = {
 			name: "",
 			addr: addr,
 			size: size,
 			type: this.textContent,
 			targetDivs: targetDivs,
-		});
-		
+		};
 		ehxv.addToWatchList(w);
 	});
 	
@@ -125,13 +110,39 @@ $(function() {
 	$(".watcher_del").on("click", function() {
 		if(confirm("Delete watcher?")) {
 			var id = $(this).attr("id").split("_")[1];
-			
-			// find WATCHER in ehxv list and delete all references...
+			ehxv.removeFromWatchList(id);
 		}
 	});
 	
-	
 	ehxv.displayData();
+	
+	var w = {
+		name: "",
+		addr: "0x06444C78",
+		type: "ws"
+	};
+	ehxv.addToWatchList(w, ehxv.index);
+	
+	var k = {
+		name: "",
+		addr: "0x06444C90",
+		type: "b"
+	};
+	ehxv.addToWatchList(k, ehxv.index);
+
+	var m = {
+		name: "",
+		addr: "0x06444C90",
+		type: "w"
+	};
+	ehxv.addToWatchList(m, ehxv.index);
+
+	var p = {
+		name: "",
+		addr: "0x06444C90",
+		type: "dw"
+	};
+	ehxv.addToWatchList(p, ehxv.index);
 	
 	//ehv.getData(0x06444C70);
 	//ehxv.getData(0);
