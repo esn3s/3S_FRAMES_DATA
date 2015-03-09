@@ -384,7 +384,6 @@ EHXV.prototype = {
 			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
 		}
 		else if(data.length == 4) {
-			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
 			$("#value_dword").val("0x" + dataFinal);
 		}
 	},
@@ -448,7 +447,7 @@ WATCHER.prototype = {
 	container: "sidebar_right",
 	counter: -1,
 	update: function() {
-		read targetdivs and get values...
+		//read targetdivs and get values...
 		this._c.textContent = new Date().getTime();
 	},
 	// draw in div...
@@ -471,7 +470,7 @@ WATCHER.prototype = {
 		this._c = data;
 		
 		// cache target divs...
-		//this.targetDivs = $.map();
+		console.log(this.targetDivs);
 	},
 	// remove watcher...
 	remove: function() {
