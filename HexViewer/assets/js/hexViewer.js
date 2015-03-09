@@ -37,20 +37,11 @@ function pad (str, max) {
 
 // convert an hex data (string) to signed decimal...
 // inverse operation: num = -4; (num < 0 ? (0xFFFFFFFF + num + 1) : num).toString(16);
-function hexByte2signed(h) {
+function hex2signed(h) {
 	var a = parseInt(h, 16);
 	var sd = ((a & 0x8000) > 0)?a - 0x10000:a;
 	
 	//console.log("hexByte2signed", h, sd);
-	
-	return sd;
-}
-
-function hexWord2signed(h) {
-	var a = parseInt(h, 16);
-	var sd = ((a & 0x80000) > 0)?a - 0x100000000:a;
-	
-	//console.log("hexWord2signed", h, sd);
 	
 	return sd;
 }
@@ -125,7 +116,7 @@ EHXV.prototype = {
 	init: function() {
 		this.initStructure();
 		this.initHeader();
-		//this.initEvents();
+		this.initEvents();
 	},
 	
 	// attach events to some keys...
@@ -140,7 +131,7 @@ EHXV.prototype = {
 	*/
 	initEvents: function() {
 		// we pass only this cause cause browsers will automatically search for a function called 'handleEvent', and that way, we're able to access object data/methods... 
-		//document.addEventListener("keyup", this, false);
+		document.addEventListener("keyup", this, false);
 	},
 	
 	// that name allow to have this being our EHXV object...
@@ -157,7 +148,7 @@ EHXV.prototype = {
 			else if(k === 45) { this.controlToggle(); }
 		}
 		
-		//console.log(e.which);
+		//console.log(e.shiftKey, e.which);
 	},
 	
 	// we need this little trick to be able to directly call object method, that = this...
@@ -210,15 +201,18 @@ EHXV.prototype = {
 		if(this.watchList.length > 0) {
 			var wl = this.watchList;
 			
-			for(var i = 0; i < wl; i++) {
-				console.log("updateWatchListValues", wl[i]);
+			for(var i = 0; i < wl.length; i++) {
+				if(wl[i]) wl[i].update();
 			}
 		}
 	},
 	
-	addToWatchList: function(w) {
-		console.log(w);
-		this.watchList.push(w);
+	addToWatchList: function(options) {
+		this.watchList.push(new WATCHER(options));
+	},
+	removeFromWatchList: function(id) {
+		this.watchList[id].remove();
+		this.watchList[id] = false;
 	},
 	
 	// update data array to display...
@@ -300,7 +294,7 @@ EHXV.prototype = {
 		for(var i = 0; i < j; i++) {
 			for(var k = 0; k < c; k++) {
 				var e = document.createElement("span");
-				e.id = id + (addr + j * 16 + k);
+				e.id = id + (addr + i * 16 + k);
 				e.appendChild(document.createTextNode(".."));
 				el.appendChild(e);
 				
@@ -364,7 +358,7 @@ EHXV.prototype = {
 			offsetEnd = "";
 			data = [];
 		}
-
+		
 		$("#selectedRange_start").val(offsetStart);
 		$("#selectedRange_end").val(offsetEnd);
 		$("#selectedRange_data").val(data.join(""));
@@ -379,8 +373,7 @@ EHXV.prototype = {
 			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
 		}
 		else if(data.length == 2) {
-			var signed = hexByte2signed(dataFinal);
-			$("#value_word_signed").val(hexByte2signed(dataFinal));
+			$("#value_word_signed").val(hex2signed(dataFinal));
 			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
 		}
 		else if(data.length == 4) {
@@ -424,21 +417,33 @@ EHXV.prototype = {
 	},
 };
 
-function WATCHER(options) {
+function WATCHER(options, index) {
 	options = options || {};
 	
 	this.addr = options.addr || -1;
-	this.size = options.size || -1;
 	this.type = options.type || -1;
-	this.targetDivs = $.map((options.targetDivs || []), function(o) { return o; });
+	this.type = this.type.toLowerCase();
+	this.ehxvIndex = index || 1; // needed to be able to target data divs...
 	
-	if(this.addr != -1 && this.size != -1 && this.type != -1) {
+	// set size and typeIndex, to make update easier...
+	if(this.type == "b") { this.size = 1; this.typeIndex = 0; }
+	else if(this.type == "w") { this.size = 2;  this.typeIndex = 1;}
+	else if(this.type == "ws") { this.size = 2;  this.typeIndex = 2;}
+	else if(this.type == "dw") { this.size = 4;  this.typeIndex = 3;}
+	else { this.size = -1;  this.typeIndex = -1; }
+	
+	if(this.addr != -1 && this.type != -1) {
 		WATCHER.prototype.counter++;
 		this.number = WATCHER.prototype.counter;
 		this.name = options.name || "Watcher #" + this.number;
 		this.addrDec = parseInt(this.addr);
+		this.setTargetDivs();
 		this.init();
+		
 		this.update();
+	}
+	else {
+		console.log("WATCHER failed to initalize, bad arguments...", options);
 	}
 };
 
@@ -446,9 +451,33 @@ function WATCHER(options) {
 WATCHER.prototype = {
 	container: "sidebar_right",
 	counter: -1,
+	aTypes: ["b", "w", "ws", "dw"],
+	aTypesFunction: [
+	                 function(x) {return parseInt(x, 16); }, 
+	                 function(x) {return parseInt(x, 16); }, 
+	                 function(x) {return hex2signed(x); }, 
+	                 function(x) {return x; }, 
+	                 ],
+	setTargetDivs: function() {
+		// determine them by starting at addr for size length...
+		this.targetDivs = [];
+		var a = this.addrDec;
+		
+		for(var i = 0; i < this.size; i++, a++) {
+			var e = document.getElementById("data" + this.ehxvIndex + "_" + a);
+			this.targetDivs.push(e);
+		}
+	},
 	update: function() {
 		//read targetdivs and get values...
-		this._c.textContent = new Date().getTime();
+		var a  = this.targetDivs;
+		var n = a.length;
+		var v = "0x";
+		var t = this.typeIndex;
+		
+		for(var i = 0; i < n; i++) v += a[i].textContent;
+		
+		this._cData.textContent = this.aTypesFunction[t](v);
 	},
 	// draw in div...
 	init: function() {
@@ -467,18 +496,16 @@ WATCHER.prototype = {
 		
 		document.getElementById(this.container).appendChild(container);
 		
-		this._c = data;
-		
-		// cache target divs...
-		console.log(this.targetDivs);
+		this._cData = data;
+		this._cContainer = container;
 	},
 	// remove watcher...
 	remove: function() {
-		
+		this._cContainer.parentNode.removeChild(this._cContainer);
 	},
 };
 	
 	// attach to window to make class available globally...
-	window.EHXV = EHXV
-	window.WATCHER = WATCHER
+	window.EHXV = EHXV;
+	window.WATCHER = WATCHER;
 })(window, document);
