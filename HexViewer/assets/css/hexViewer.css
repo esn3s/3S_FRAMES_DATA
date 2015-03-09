@@ -74,7 +74,7 @@ section {
 }
 
 .address, .hex_header, .hex_data, .hex_text, .hex_info {
-	font-family: 'Source Code Pro','Courier New',Consolas,Menlo,'PT Mono',monospace;
+	font-family: 'Source Code Pro','Courier New', Consolas, Monospace;
 	font-size: 14px;
 	line-height: 18px;
 	cursor: default;
@@ -95,7 +95,7 @@ section {
 }
 .address {
 	float: left;
-	padding: 28px 10px;
+	padding: 0px 10px;
 	background: #000;
 	text-align: right;
 	border: 0px solid dodgerblue;
