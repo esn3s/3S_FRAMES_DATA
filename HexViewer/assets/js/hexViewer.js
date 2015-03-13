@@ -29,6 +29,13 @@ Ideas:
 ©ESN@2015
 */
 
+// map, build an array using given function through all elements of given array...
+function map(a, fn) {
+	for(var i = 0, r = []; i < a.length; i++) r[i] = fn(a[i]);
+	
+	return r;
+}
+
 // add 0 before, if needed...
 function pad (str, max) {
 	str = str.toString();
@@ -78,7 +85,10 @@ function EHXV(options) {
 	this.knownRanges = [];						// list of known ranges with their info...
 	this.watchList = [];						// list of range to watch...
 	
-	// determine occurence of object to build prefix...
+	// fps...
+	this.setFps(options.fps || 10);				// set wanted fps...
+	
+	// determine occurence of object to build suffix...
 	EHXV.prototype.occurenceCounter++;
 	this.suffix = EHXV.prototype.occurenceCounter;
 	
@@ -90,6 +100,20 @@ function EHXV(options) {
 		data: 		"hex_data" + this.suffix,
 		text: 		"hex_text" + this.suffix,
 		info: 		"hex_info" + this.suffix,
+		menu:		"menubar",
+		fps:		"fps",
+		
+		sidebar_data: "sidebar_data",
+		sidebar_insp: "sidebar_data_insp",
+		sidebar_watch: "sidebar_right",
+		
+		inspStart: "selectedRange_start",
+		inspEnd: "selectedRange_end",
+		inspData: "selectedRange_data",
+		insp_b: "value_byte_unsigned",
+		insp_w: "value_word_unsigned",
+		insp_ws: "value_word_signed",
+		insp_dw: "value_dword",
 	};
 	
 	// cached div...
@@ -101,6 +125,20 @@ function EHXV(options) {
 		data: null,
 		text: null,
 		info: null,
+		menu: null,
+		fps: null,
+		
+		sidebar_data: null,
+		sidebar_insp: null,
+		sidebar_watch: null,
+		
+		inspStart: null,
+		inspEnd: null,
+		inspData: null,
+		insp_b: null,
+		insp_w: null,
+		insp_ws: null,
+		insp_dw: null,
 	};
 	
 	// initialisation...
@@ -112,11 +150,49 @@ EHXV.prototype = {
 	// occurence counter to know wich objects structure to use...
 	occurenceCounter: 0,
 	
-	// init structure and prepare address div...
+	// init structure, cache useful elements, prepare address div...
 	init: function() {
 		this.initStructure();
+		this.initCache();
 		this.initHeader();
 		this.initEvents();
+	},
+	
+	// cache all useful to have elements...
+	initCache: function() {
+		var _ = this.div;
+		var _c = this._cdiv;
+		var d = document;
+		
+		for(var x in _) _c[x] = d.getElementById(_[x]);
+	},
+	
+	// fps...
+	setFps: function(f) { this.fps = f; this.updateIntervalForFps(); },
+	updateIntervalForFps: function() { this.intervalFps = 1000 / this.fps; },
+	
+	// display data...
+	displayData: function(t) {
+		if(this.loop) this.index++;
+		
+		if(this.index > this.lastFrameIndex) {
+			this.index = 0;
+		}
+		else if(this.index < 0) {
+			this.index = this.lastFrameIndex;
+		}
+		
+		//console.log(this.index, that);
+		
+		// refresh data display...
+		this.displayDataForIndex(this.index);
+		
+		// we need this little trick to be able to directly call object method...
+		
+		if(this.loop) {
+			var that = this;
+			requestAnimationFrame(function() { return that.displayData(); });
+		}
 	},
 	
 	// attach events to some keys...
@@ -151,31 +227,9 @@ EHXV.prototype = {
 		//console.log(e.shiftKey, e.which);
 	},
 	
-	// we need this little trick to be able to directly call object method, that = this...
-	controlStart: function() { this.loop = true; var that = this; requestAnimationFrame(function() { return that.displayData(); }); },
+	controlStart: function() { this.loop = true; this.displayData(); },
 	controlStop: function() { this.loop = false; },
 	controlToggle: function() { (this.loop)?this.controlStop():this.controlStart(); },
-	
-	// display data...
-	displayData: function() {
-		if(this.loop) this.index++;
-		
-		if(this.index > this.lastFrameIndex) {
-			this.index = 0;
-		}
-		else if(this.index < 0) {
-			this.index = this.lastFrameIndex;
-		}
-		
-		//console.log(this.index, that);
-		
-		// refresh data display...
-		this.displayDataForIndex(this.index);
-		
-		// we need this little trick to be able to directly call object method...
-		var that = this;
-		if(this.loop) requestAnimationFrame(function() { return that.displayData(); });
-	},
 	
 	// replace content of hex data...
 	displayDataForIndex: function(index) {
@@ -189,8 +243,12 @@ EHXV.prototype = {
 		
 		// build new div content...
 		for(var k = 0; k < i; k++) {
-			if(el[k].id) el[k].textContent = data[k];
+			if(el[k].id) el[k].firstChild.nodeValue = data[k];
 		}
+		
+		// fps refresh...
+		var fps = this._cdiv.fps;
+		fps.firstChild.nodeValue = index;
 		
 		// update watch list...
 		this.updateWatchListValues();
@@ -309,35 +367,36 @@ EHXV.prototype = {
 	// build structure...
 	initStructure: function() {
 		// container div...
-		this._cdiv.base = document.getElementById(this.div.base);
+		var d = this.div;
+		var base = document.getElementById(d.base);
 		
-		var addr = newElement("div", this.div.address, "address");
-		var hex = newElement("div", this.div.hex, "hex");
-		var hex_header = newElement("div", this.div.header, "hex_header");
-		var hex_data = newElement("div", this.div.data, "hex_data");
+		var addr = newElement("div", d.address, "address");
+		var hex = newElement("div", d.hex, "hex");
+		var hex_header = newElement("div", d.header, "hex_header");
+		var hex_data = newElement("div", d.data, "hex_data");
 		hex.appendChild(addr);
 		hex.appendChild(hex_data);
-		var text = newElement("div", this.div.text, "hex_text");
-		var info = newElement("div", this.div.info, "hex_info");
+		var text = newElement("div", d.text, "hex_text");
+		var info = newElement("div", d.info, "hex_info");
 		
-		this._cdiv.base.appendChild(hex_header);
-		this._cdiv.base.appendChild(hex);
-		this._cdiv.base.appendChild(text);
-		this._cdiv.base.appendChild(info);
+		base.appendChild(hex_header);
+		base.appendChild(hex);
+		base.appendChild(text);
+		base.appendChild(info);
 		
-		// cache all...
-		this._cdiv.address = addr;
-		this._cdiv.hex = hex;
-		this._cdiv.header = hex_header;
-		this._cdiv.data = hex_data;
-		this._cdiv.text = text;
-		this._cdiv.info = info;
+		// create fps div...
+		var fps = newElement("div", d.fps, "fps");
+		fps.appendChild(document.createTextNode(" "));
+		var menu = document.getElementById(d.menu);
+		menu.appendChild(fps);
+		
+		// cache is done next...
 	},
 	
 	updateWithSelectedRange: function() {
 		// find all selected...
 		var offsetStart, offsetEnd, data;
-		var list = $("span.selected", this._cdiv.hex);
+		var list = this._cdiv.hex.querySelectorAll("span.selected");
 		
 		if(list.length > 0 && list.length < 8) {
 			// read first and last to calculate range...
@@ -348,9 +407,7 @@ EHXV.prototype = {
 			offsetStart = "0x" + pad(parseInt(tmp1[1]).toString(16).toUpperCase(), 8);
 			offsetEnd = "0x" + pad(parseInt(tmp2[1]).toString(16).toUpperCase(), 8);
 			
-			data = $.map(list, function(o) {
-				return o.textContent;
-			});
+			data = map(list, function(o) { return o.firstChild.nodeValue; });
 		}
 		else {
 			// no selected...
@@ -359,25 +416,31 @@ EHXV.prototype = {
 			data = [];
 		}
 		
-		$("#selectedRange_start").val(offsetStart);
-		$("#selectedRange_end").val(offsetEnd);
-		$("#selectedRange_data").val(data.join(""));
+		var _ = this._cdiv;
+		
+		// update values...
+		_.inspStart.value = offsetStart;
+		_.inspEnd.value = offsetEnd;
+		_.inspData.value = data.join("");
 		
 		// empty inspector fields...
-		$("input", "#sidebar_data_insp").val("");
+		_.insp_b.value = "";
+		_.insp_w.value = "";
+		_.insp_ws.value = "";
+		_.insp_dw.value = "";
 		
 		// update values fields...
 		var dataFinal = data.join("");
 		
 		if(data.length == 1) {
-			$("#value_byte_unsigned").val(parseInt(dataFinal, 16));
+			_.insp_b.value = parseInt(dataFinal, 16);
 		}
 		else if(data.length == 2) {
-			$("#value_word_signed").val(hex2signed(dataFinal));
-			$("#value_word_unsigned").val(parseInt(dataFinal, 16));
+			_.insp_w.value = hex2signed(dataFinal);
+			_.insp_ws.value = parseInt(dataFinal, 16);
 		}
 		else if(data.length == 4) {
-			$("#value_dword").val("0x" + dataFinal);
+			_.insp_dw.value = "0x" + dataFinal;
 		}
 	},
 	
@@ -475,9 +538,9 @@ WATCHER.prototype = {
 		var v = "0x";
 		var t = this.typeIndex;
 		
-		for(var i = 0; i < n; i++) v += a[i].textContent;
+		for(var i = 0; i < n; i++) v += a[i].firstChild.nodeValue;
 		
-		this._cData.textContent = this.aTypesFunction[t](v);
+		this._cData.firstChild.nodeValue = this.aTypesFunction[t](v);
 	},
 	// draw in div...
 	init: function() {
