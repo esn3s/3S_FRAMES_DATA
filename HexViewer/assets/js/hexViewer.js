@@ -31,7 +31,7 @@ Ideas:
 
 // map, build an array using given function through all elements of given array...
 function map(a, fn) {
-	for(var i = 0, r = []; i < a.length; i++) r[i] = fn(a[i]);
+	for(var i = 0, r = []; i < a.length; i+=1) r[i] = fn(a[i]);
 	
 	return r;
 }
@@ -46,11 +46,7 @@ function pad (str, max) {
 // inverse operation: num = -4; (num < 0 ? (0xFFFFFFFF + num + 1) : num).toString(16);
 function hex2signed(h) {
 	var a = parseInt(h, 16);
-	var sd = ((a & 0x8000) > 0)?a - 0x10000:a;
-	
-	//console.log("hexByte2signed", h, sd);
-	
-	return sd;
+	return ((a & 0x8000) > 0)?a - 0x10000:a;
 }
 
 // return a new element with given id and class attribute set...
@@ -116,7 +112,7 @@ function EHXV(options) {
 		insp_dw: "value_dword",
 	};
 	
-	// cached div...
+	// cached elements...
 	this._cdiv = {
 		base: null,
 		address: null,
@@ -173,23 +169,28 @@ EHXV.prototype = {
 	
 	// display data...
 	displayData: function(t) {
-		if(this.loop) this.index++;
+		var index = this.index;
+		var loop = this.loop;
+		var lastFrameIndex = this.lastFrameIndex;
 		
-		if(this.index > this.lastFrameIndex) {
-			this.index = 0;
+		if(loop) index++;
+		
+		if(index > lastFrameIndex) {
+			index = 0;
 		}
-		else if(this.index < 0) {
-			this.index = this.lastFrameIndex;
+		else if(index < 0) {
+			index = lastFrameIndex;
 		}
 		
-		//console.log(this.index, that);
+		this.index = index;
+		this.lastFrameIndex = lastFrameIndex;
 		
 		// refresh data display...
-		this.displayDataForIndex(this.index);
+		this.displayDataForIndex(index);
 		
 		// we need this little trick to be able to directly call object method...
 		
-		if(this.loop) {
+		if(loop) {
 			var that = this;
 			requestAnimationFrame(function() { return that.displayData(); });
 		}
@@ -206,30 +207,28 @@ EHXV.prototype = {
 		- start/stop : 45 (insert)
 	*/
 	initEvents: function() {
-		// we pass only this cause cause browsers will automatically search for a function called 'handleEvent', and that way, we're able to access object data/methods... 
+		// we pass only directly this cause as browsers will automatically search for a function called 'handleEvent', and that way, we're able to access object data/methods... 
 		document.addEventListener("keyup", this, false);
 	},
 	
-	// that name allow to have this being our EHXV object...
+	// that name allow to have 'this' being our EHXV object...
 	handleEvent: function(e) {
 		var k = e.which;
 		
 		if(e.shiftKey) {
-			if(k === 37) 	  { this.controlStop(); this.index--; 	this.displayData(); }
-			else if(k === 38) { this.controlStop(); this.index += 10; this.displayData(); }
-			else if(k === 39) { this.controlStop(); this.index++; 	this.displayData(); }
-			else if(k === 40) { this.controlStop(); this.index -= 10; this.displayData(); }
+			if(k === 37) 	  { this.controlStop(); this.index--; 		this.displayData(); }
+			else if(k === 38) { this.controlStop(); this.index += 10; 	this.displayData(); }
+			else if(k === 39) { this.controlStop(); this.index++; 		this.displayData(); }
+			else if(k === 40) { this.controlStop(); this.index -= 10; 	this.displayData(); }
 			else if(k === 36) { this.controlStop(); this.index = 0; 	this.displayData(); }
 			else if(k === 35) { this.controlStop(); this.index = this.lastFrameIndex; this.displayData(); }
 			else if(k === 45) { this.controlToggle(); }
 		}
-		
-		//console.log(e.shiftKey, e.which);
 	},
 	
 	controlStart: function() { this.loop = true; this.displayData(); },
 	controlStop: function() { this.loop = false; },
-	controlToggle: function() { (this.loop)?this.controlStop():this.controlStart(); },
+	controlToggle: function() { this.loop?this.controlStop():this.controlStart(); },
 	
 	// replace content of hex data...
 	displayDataForIndex: function(index) {
@@ -237,12 +236,20 @@ EHXV.prototype = {
 		var data = ((new Date().getTime()) + "x" + this.data[index] || "out of bound index '" + index + "'").match(/.{1,2}/g); // better way possible?
 		
 		// update each span with proper value...
+		
+		/*
+		possible optimization to avoid reflow if any?
+		- clone current this._cdiv.data
+		- cange values in it
+		- replaceChild in DOM
+		*/
+		
 		// build nbRows div...
 		var el = this._cdiv.data.childNodes;
 		var i = el.length;
 		
 		// build new div content...
-		for(var k = 0; k < i; k++) {
+		for(var k = 0; k < i; k+=1) {
 			if(el[k].id) el[k].firstChild.nodeValue = data[k];
 		}
 		
@@ -254,12 +261,14 @@ EHXV.prototype = {
 		this.updateWatchListValues();
 	},
 	
+	/* WATCHER manager BEGIN */
+	
 	// refresh values of watch list if any...
 	updateWatchListValues: function() {
 		if(this.watchList.length > 0) {
 			var wl = this.watchList;
 			
-			for(var i = 0; i < wl.length; i++) {
+			for(var i = 0; i < wl.length; i+=1) {
 				if(wl[i]) wl[i].update();
 			}
 		}
@@ -272,6 +281,8 @@ EHXV.prototype = {
 		this.watchList[id].remove();
 		this.watchList[id] = false;
 	},
+	
+	/* WATCHER manager END */
 	
 	// update data array to display...
 	setData: function(addr, data) {
@@ -304,17 +315,19 @@ EHXV.prototype = {
 	// build header...
 	initHeader: function() {
 		var j = this.nbCols;
+		var h = this._cdiv.header;
+		var d = document;
 		
-		for(var i = 0, k = 0; i < j; i++, k++) {
+		for(var i = 0, k = 0; i < j; i+=1, k+=1) {
 			// each 8, insert a space...
 			if(k === 8) {
-				this._cdiv.header.appendChild(document.createTextNode(" "));
+				h.appendChild(d.createTextNode(" "));
 				k = 0;
 			}
 			
-			var span = document.createElement("span");
-			span.appendChild(document.createTextNode(pad(i, 2)));
-			this._cdiv.header.appendChild(span);
+			var span = d.createElement("span");
+			span.appendChild(d.createTextNode(pad(i, 2)));
+			h.appendChild(span);
 		}
 	},
 	
@@ -323,16 +336,16 @@ EHXV.prototype = {
 		// build nbRows div...
 		var j = this.nbRows;
 		var addr = this.addr;
-		//var div = "addr" + this.suffix + "_";
+		var d = document;
 		
 		// delete previous content...
 		var el = this._cdiv.address;
 		while(el.firstChild) el.removeChild(el.firstChild);
 		
 		// build new div content...
-		for(var i = 0; i < j; i++) {
-			var e = document.createElement("div");
-			e.appendChild(document.createTextNode("0x" + pad((addr + i * 16).toString(16).toUpperCase(), 8)));
+		for(var i = 0; i < j; i+=1) {
+			var e = d.createElement("div");
+			e.appendChild(d.createTextNode("0x" + pad((addr + i * 16).toString(16).toUpperCase(), 8)));
 			el.appendChild(e);
 		}
 	},
@@ -343,41 +356,43 @@ EHXV.prototype = {
 		var c = this.nbCols;
 		var addr = this.addr;
 		var id = "data" + this.suffix + "_";
+		var d = document;
 		
 		// delete previous content...
 		var el = this._cdiv.data;
 		while(el.firstChild) el.removeChild(el.firstChild);
 		
 		// build new div content...
-		for(var i = 0; i < j; i++) {
-			for(var k = 0; k < c; k++) {
-				var e = document.createElement("span");
+		for(var i = 0; i < j; i+=1) {
+			for(var k = 0; k < c; k+=1) {
+				var e = d.createElement("span");
 				e.id = id + (addr + i * 16 + k);
-				e.appendChild(document.createTextNode(".."));
+				e.appendChild(d.createTextNode(".."));
 				el.appendChild(e);
 				
 				// each 8, insert a space...
-				if(k === 7) el.appendChild(document.createTextNode(" "));
+				if(k === 7) el.appendChild(d.createTextNode(" "));
 			}
 			
-			el.appendChild(document.createElement("br"));
+			el.appendChild(d.createElement("br"));
 		}
 	},
 	
 	// build structure...
 	initStructure: function() {
 		// container div...
-		var d = this.div;
-		var base = document.getElementById(d.base);
+		var div = this.div;
+		var d = document;
+		var base = d.getElementById(d.base);
 		
-		var addr = newElement("div", d.address, "address");
-		var hex = newElement("div", d.hex, "hex");
-		var hex_header = newElement("div", d.header, "hex_header");
-		var hex_data = newElement("div", d.data, "hex_data");
+		var addr = newElement("div", div.address, "address");
+		var hex = newElement("div", div.hex, "hex");
+		var hex_header = newElement("div", div.header, "hex_header");
+		var hex_data = newElement("div", div.data, "hex_data");
 		hex.appendChild(addr);
 		hex.appendChild(hex_data);
-		var text = newElement("div", d.text, "hex_text");
-		var info = newElement("div", d.info, "hex_info");
+		var text = newElement("div", div.text, "hex_text");
+		var info = newElement("div", div.info, "hex_info");
 		
 		base.appendChild(hex_header);
 		base.appendChild(hex);
@@ -385,9 +400,9 @@ EHXV.prototype = {
 		base.appendChild(info);
 		
 		// create fps div...
-		var fps = newElement("div", d.fps, "fps");
-		fps.appendChild(document.createTextNode(" "));
-		var menu = document.getElementById(d.menu);
+		var fps = newElement("div", div.fps, "fps");
+		fps.appendChild(d.createTextNode(" "));
+		var menu = d.getElementById(div.menu);
 		menu.appendChild(fps);
 		
 		// cache is done next...
@@ -423,7 +438,7 @@ EHXV.prototype = {
 		_.inspEnd.value = offsetEnd;
 		_.inspData.value = data.join("");
 		
-		// empty inspector fields...
+		// empty inspector input fields...
 		_.insp_b.value = "";
 		_.insp_w.value = "";
 		_.insp_ws.value = "";
@@ -473,7 +488,7 @@ EHXV.prototype = {
 			
 			if(addrDec >= this.addr && addrDec <= this.addrEnd) {
 				var p = [];
-				for(var j = 0; j < o.length; j++) p.push("#data_" + (addrDec + j));
+				for(var j = 0; j < o.length; j+=1) p.push("#data_" + (addrDec + j));
 				$(p.join(",")).addClass("known_range_" + o.type);
 			}
 		}
@@ -523,13 +538,16 @@ WATCHER.prototype = {
 	                 ],
 	setTargetDivs: function() {
 		// determine them by starting at addr for size length...
-		this.targetDivs = [];
+		var d = document;
+		var td = [];
 		var a = this.addrDec;
+		var ehxvIndex = this.ehxvIndex;
 		
-		for(var i = 0; i < this.size; i++, a++) {
-			var e = document.getElementById("data" + this.ehxvIndex + "_" + a);
-			this.targetDivs.push(e);
+		for(var i = 0, l = this.size; i < l; i+=1, a+=1) {
+			td.push(d.getElementById("data" + ehxvIndex + "_" + a));
 		}
+		
+		this.targetDivs = td;
 	},
 	update: function() {
 		//read targetdivs and get values...
@@ -538,7 +556,7 @@ WATCHER.prototype = {
 		var v = "0x";
 		var t = this.typeIndex;
 		
-		for(var i = 0; i < n; i++) v += a[i].firstChild.nodeValue;
+		for(var i = 0; i < n; i+=1) v += a[i].firstChild.nodeValue;
 		
 		this._cData.firstChild.nodeValue = this.aTypesFunction[t](v);
 	},
@@ -565,6 +583,7 @@ WATCHER.prototype = {
 	// remove watcher...
 	remove: function() {
 		this._cContainer.parentNode.removeChild(this._cContainer);
+		this._cContainer = null;
 	},
 };
 	
