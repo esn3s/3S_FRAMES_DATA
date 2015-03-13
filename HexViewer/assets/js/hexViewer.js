@@ -186,7 +186,11 @@ EHXV.prototype = {
 		this.lastFrameIndex = lastFrameIndex;
 		
 		// refresh data display...
+		var iStart = performance.now();
 		this.displayDataForIndex(index);
+		var iEnd = performance.now();
+		this._cdiv.fps.firstChild.nodeValue = Math.floor(((iEnd - iStart) * 100)) / 100 + " / " + this._cdiv.fps.firstChild.nodeValue
+		//console.log("display #" + index + " in:", (iEnd - iStart))
 		
 		// we need this little trick to be able to directly call object method...
 		
@@ -383,7 +387,7 @@ EHXV.prototype = {
 		// container div...
 		var div = this.div;
 		var d = document;
-		var base = d.getElementById(d.base);
+		var base = d.getElementById(this.div.base);
 		
 		var addr = newElement("div", div.address, "address");
 		var hex = newElement("div", div.hex, "hex");
